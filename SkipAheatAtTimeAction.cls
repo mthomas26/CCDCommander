@@ -1,0 +1,117 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
+END
+Attribute VB_Name = "SkipAheadAtTimeAction"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
+' Copyright (C) 2004-2024 Matthew Thomas
+'
+' This file is part of CCD Commander.
+'
+' CCD Commander is free software: you can redistribute it and/or modify it under the terms of the GNU
+' General Public License as published by the Free Software Foundation, version 3 of the License.
+'
+' CCD Commander is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+' even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+' Public License for more details.
+'
+' You should have received a copy of the GNU General Public License along with CCD Commander.
+' If not, see <https://www.gnu.org/licenses/>.
+'
+'---------------------------------------------------------------------------------------------------------
+
+Option Explicit
+
+Public RunTimeStatus As String  'This is for run time use only, no need to save it!
+
+Public Hour As Integer
+Public Minute As Integer
+
+Public SoftSkip As Boolean
+
+Public ActualSkipToTime As Date 'Note, this is for run time use only, no need to save it!
+
+Public Selected As Boolean
+
+Private VersionNumber As Long
+
+Private Sub Class_Initialize()
+    VersionNumber = 3
+End Sub
+
+Public Function ByteArraySize() As Long
+    Dim MySize As Long
+    Dim StringLen As Long
+    
+    MySize = 0
+    MySize = MySize + Len(VersionNumber)
+    MySize = MySize + Len(Hour)
+    MySize = MySize + Len(Minute)
+    MySize = MySize + Len(SoftSkip)
+    
+    MySize = MySize + Len(Selected)
+    
+    ByteArraySize = MySize
+End Function
+
+Public Sub SaveActionByteArray(ByRef ptrByteArray() As Byte, ByRef Index As Long)
+    Dim StringLen As Long
+    
+    Call CopyMemory(ptrByteArray(Index), VersionNumber, Len(VersionNumber))
+    Index = Index + Len(VersionNumber)
+    Call CopyMemory(ptrByteArray(Index), Hour, Len(Hour))
+    Index = Index + Len(Hour)
+    Call CopyMemory(ptrByteArray(Index), Minute, Len(Minute))
+    Index = Index + Len(Minute)
+
+    Call CopyMemory(ptrByteArray(Index), Selected, Len(Selected))
+    Index = Index + Len(Selected)
+
+    Call CopyMemory(ptrByteArray(Index), SoftSkip, Len(SoftSkip))
+    Index = Index + Len(SoftSkip)
+End Sub
+
+Public Sub LoadActionByteArray(ByRef ptrByteArray() As Byte, ByRef Index As Long)
+    Dim SavedVersionNumber As Long
+    Dim StringLen As Long
+
+    Call CopyMemory(SavedVersionNumber, ptrByteArray(Index), Len(SavedVersionNumber))
+    Index = Index + Len(SavedVersionNumber)
+    Call CopyMemory(Hour, ptrByteArray(Index), Len(Hour))
+    Index = Index + Len(Hour)
+    Call CopyMemory(Minute, ptrByteArray(Index), Len(Minute))
+    Index = Index + Len(Minute)
+    
+    If SavedVersionNumber >= 2 Then
+        Call CopyMemory(Selected, ptrByteArray(Index), Len(Selected))
+        Index = Index + Len(Selected)
+    Else
+        Selected = True
+    End If
+
+    If SavedVersionNumber >= 3 Then
+        Call CopyMemory(SoftSkip, ptrByteArray(Index), Len(SoftSkip))
+        Index = Index + Len(SoftSkip)
+    Else
+        SoftSkip = False
+    End If
+End Sub
+
+Public Function BuildActionListString() As String
+    Dim ListString As String
+    Dim Time As Date
+    
+    Time = Hour & ":" & Minute
+
+    ListString = "Skip to here at " & Format(Time, "Short Time")
+
+    BuildActionListString = ListString
+End Function
+
